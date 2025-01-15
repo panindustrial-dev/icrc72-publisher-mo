@@ -7,6 +7,7 @@ module {
 
   public let BTree = v0_1_0.BTree;
   public let Vector = v0_1_0.Vector;
+  public let Set = v0_1_0.Set;
   public type EmitableEvent = v0_1_0.EmitableEvent;
   public type PublicationRecord = v0_1_0.PublicationRecord;
 
@@ -29,7 +30,7 @@ module {
     */
 
     let state : v0_1_0.State = {
-      broadcasters = BTree.init<Text, Vector.Vector<Principal>>(null);
+      broadcasters = BTree.init<Text, Set.Set<Principal>>(null);
       previousEventIDs = BTree.init<Text, (Nat, Nat)>(null); //IDUsed, BroadcasterUsed
       pendingEvents = Vector.new<EmitableEvent>();
 

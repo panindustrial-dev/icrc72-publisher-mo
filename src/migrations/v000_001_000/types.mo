@@ -7,6 +7,7 @@ import SetLib "mo:map/Set";
 import MapLib "mo:map/Map";
 import TT "../../../../timerTool/src";
 import ICRC72Subscriber "../../../../icrc72-subscriber.mo/src";
+import BroadcasterService "../../../../icrc72-broadcaster.mo/src/service";
 // please do not import any types from your project outside migrations folder here
 // it can lead to bugs when you change those types later, because migration types should not be changed
 // you should also avoid importing these types anywhere in your project directly from here
@@ -127,7 +128,18 @@ module {
           remove = "icrc72:broadcaster:publisher:broadcaster:remove";
         };
       }
-    }
+    };
+    subscriber = {
+      timers = {
+        sendConfirmations = "icrc72:subscriber:timers:sendConfirmations";
+      };
+      sys = "icrc72:subscriber:sys:";
+      broadcasters = {
+        add = "icrc72:subscriber:broadcaster:add";
+        remove = "icrc72:subscriber:broadcaster:remove";
+        error = "icrc72:subscriber:broadcaster:error";
+      };
+    };
   };
 
   public type PublicationRegistration = {
@@ -173,6 +185,8 @@ module {
     generateId: ?((Text, State) -> Nat);
     icrc72Subscriber : ICRC72Subscriber.Subscriber;
     icrc72OrchestratorCanister : Principal;
+    onEventPublishError : ?(<system>(NewEvent, BroadcasterService.PublishError) -> Bool);
+    onEventPublished : ?(<system>(NewEvent, ?BroadcasterService.PublishResult) -> ());
     tt: TT.TimerTool;
   };
 
@@ -181,9 +195,24 @@ module {
     id: Nat;
   };
 
+  public type Stats = {
+    broadcasters: [(Text, [Principal])];
+    publications: [(Nat, PublicationRecord)];
+    previousEventIds: [(Text, (Nat, Nat))];
+    pendingEvents: [EmitableEvent];
+    drainEventId: ?TT.ActionId;
+    eventsProcessing: Bool;
+    readyForPublications: Bool;
+    error: ?Text;
+    tt: TT.Stats;
+    icrc72OrchestratorCanister: Principal;
+    icrc72Subscriber: ICRC72Subscriber.Stats;
+    orchestrator: Principal;
+  };
+
   ///MARK: State
   public type State = {
-    broadcasters : BTree.BTree<Text, Vector.Vector<Principal>>;
+    broadcasters : BTree.BTree<Text, Set.Set<Principal>>;
     publications : BTree.BTree<Nat, PublicationRecord>;
     publicationsByNamespace : BTree.BTree<Text, Nat>; 
     previousEventIDs : BTree.BTree<Text, (Nat, Nat)>; //Namespace, Publication, IDUsed
